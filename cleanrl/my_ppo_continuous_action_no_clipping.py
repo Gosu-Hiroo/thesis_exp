@@ -149,6 +149,7 @@ if __name__ == "__main__":
             name=run_name,
             # monitor_gym=True, no longer works for gymnasium
             save_code=True,
+            group="no clipping",
         )
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
