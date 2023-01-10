@@ -59,7 +59,7 @@ def parse_args():
         help="the K epochs to update the policy")
     parser.add_argument("--norm-adv", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="Toggles advantages normalization")
-    parser.add_argument("--clip-coef", type=float, default=0.05,
+    parser.add_argument("--clip-coef", type=float, default=0.1,
         help="the surrogate clipping coefficient")
     parser.add_argument("--clip-vloss", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="Toggles whether or not to use a clipped loss for the value function, as per the paper.")
@@ -129,11 +129,21 @@ class Agent(nn.Module):
             layer_init(nn.Conv2d(64, 64, 3, stride=1)),
             nn.ReLU(),
             nn.Flatten(),
+            # layer_init(nn.Linear(64 * 7 * 7, 512)),
+            # nn.ReLU(),
+        )
+        # self.actor = layer_init(nn.Linear(512, envs.single_action_space.n), std=0.01)
+        self.actor = nn.Sequential(
             layer_init(nn.Linear(64 * 7 * 7, 512)),
             nn.ReLU(),
+            layer_init(nn.Linear(512, envs.single_action_space.n), std=0.01)
         )
-        self.actor = layer_init(nn.Linear(512, envs.single_action_space.n), std=0.01)
-        self.critic = layer_init(nn.Linear(512, 1), std=1)
+            # nn.Linear(512, envs.single_action_space.n), std=0.01)
+        self.critic = nn.Sequential(
+        layer_init(nn.Linear(64 * 7 * 7, 512)),
+        nn.ReLU(),
+        layer_init(nn.Linear(512, 1), std=1)
+        )
 
     def get_value(self, x):
         return self.critic(self.network(x / 255.0))
@@ -161,7 +171,7 @@ if __name__ == "__main__":
             name=run_name,
             monitor_gym=True,
             save_code=True,
-            group="clip adv pure",
+            group="semi sep1"
         )
     writer = SummaryWriter(f"runs/{run_name}")
     writer.add_text(
@@ -270,7 +280,6 @@ if __name__ == "__main__":
         # Optimizing the policy and value network
         b_inds = np.arange(args.batch_size)
         clipfracs = []
-        avg_clip = 0.
         for epoch in range(args.update_epochs):
             np.random.shuffle(b_inds)
             for start in range(0, args.batch_size, args.minibatch_size):
@@ -293,9 +302,9 @@ if __name__ == "__main__":
 
                 # Policy loss
                 pg_loss1 = -mb_advantages * ratio
-                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef/(1e-8+abs(mb_advantages)), 1 + args.clip_coef/(1e-8+abs(mb_advantages)))
+                pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - args.clip_coef, 1 + args.clip_coef)
                 pg_loss = torch.max(pg_loss1, pg_loss2).mean()
-                avg_clip = args.clip_coef/(1e-8+abs(mb_advantages)).mean()
+
                 # Value loss
                 newvalue = newvalue.view(-1)
                 if args.clip_vloss:
@@ -330,7 +339,6 @@ if __name__ == "__main__":
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
         writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/avg_clip_coef", avg_clip, global_step)
         writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
         writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
         writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
@@ -341,4 +349,4 @@ if __name__ == "__main__":
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
     envs.close()
-    writer.close() 
+    writer.close()
