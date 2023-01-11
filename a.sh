@@ -152,3 +152,6 @@ CUDA_VISIBLE_DEVICES=3 nohup poetry run python cleanrl/ppo_old.py --target-kl 0.
 CUDA_VISIBLE_DEVICES=3 nohup poetry run python cleanrl/ppo_old.py --target-kl 0.03 --total-timesteps 4000000  --env-id InvertedDoublePendulum-v2 --seed 5 --track --wandb-project-name test30 &
 CUDA_VISIBLE_DEVICES=3 nohup poetry run python cleanrl/ppo_old.py --target-kl 0.03 --total-timesteps 4000000  --env-id Hopper-v2 --seed 5 --track --wandb-project-name test30 &
 
+poetry run python cleanrl/my_ppo_atari_sep.py --total-timesteps 20000000  --env-id Breakout-v5 --seed 1 --track --wandb-project-name test33 &&
+poetry run python cleanrl/my_ppo_atari_sep.py --total-timesteps 20000000  --env-id Phoenix-v5 --seed 1 --track --wandb-project-name test33 &&
+poetry run python cleanrl/my_ppo_atari_sep.py --total-timesteps 20000000  --env-id DoubleDunk-v5 --seed 1 --track --wandb-project-name test33
