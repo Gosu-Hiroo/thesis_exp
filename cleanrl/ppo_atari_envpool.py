@@ -201,7 +201,7 @@ if __name__ == "__main__":
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
     dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
     values = torch.zeros((args.num_steps, args.num_envs)).to(device)
-    avg_returns = deque(maxlen=20)
+    avg_returns = deque(maxlen=100)
 
     # TRY NOT TO MODIFY: start the game
     global_step = 0
